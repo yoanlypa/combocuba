@@ -15,27 +15,26 @@ export default function AuthStatus() {
     const supabase = createClient();
     let activo = true;
 
-    async function cargar() {
-      const { data: userData } = await supabase.auth.getUser();
+    const { data: suscripcion } = supabase.auth.onAuthStateChange((_evento, session) => {
       if (!activo) return;
 
-      setUsuario(userData.user);
+      setUsuario(session?.user ?? null);
+      setCargando(false);
 
-      if (userData.user) {
-        const { data: perfil } = await supabase
+      if (session?.user) {
+        supabase
           .from("perfiles")
           .select("nombre")
-          .eq("id", userData.user.id)
-          .maybeSingle();
-        if (activo) setNombre(perfil?.nombre || userData.user.email);
+          .eq("id", session.user.id)
+          .maybeSingle()
+          .then(({ data: perfil }) => {
+            if (activo) setNombre(perfil?.nombre || session.user.email);
+          });
+      } else {
+        setNombre("");
       }
+    });
 
-      if (activo) setCargando(false);
-    }
-
-    cargar();
-
-    const { data: suscripcion } = supabase.auth.onAuthStateChange(() => cargar());
     return () => {
       activo = false;
       suscripcion.subscription.unsubscribe();

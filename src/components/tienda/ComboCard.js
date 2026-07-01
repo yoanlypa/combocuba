@@ -1,9 +1,7 @@
 import AgregarBoton from "./AgregarBoton";
 
-export default function ComboCard({ combo, productos }) {
-  const items = combo.itemsIds
-    .map((id) => productos.find((p) => p.id === id))
-    .filter(Boolean);
+export default function ComboCard({ combo }) {
+  const items = combo.productos;
 
   return (
     <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-4">

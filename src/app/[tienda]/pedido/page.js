@@ -1,14 +1,12 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
-import { getTiendaBySlug } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/client";
 
 const CAMPOS_INICIALES = {
-  compradorNombre: "",
-  compradorTelefono: "",
   destinatarioNombre: "",
   destinatarioTelefono: "",
   destinatarioDireccion: "",
@@ -18,24 +16,129 @@ const CAMPOS_INICIALES = {
 
 export default function PedidoPage() {
   const { tienda: slug } = useParams();
-  const tienda = getTiendaBySlug(slug);
+  const router = useRouter();
   const { items, total, cambiarCantidad, quitarItem, vaciarCarrito } = useCart();
-  const [enviado, setEnviado] = useState(false);
-  const [form, setForm] = useState(CAMPOS_INICIALES);
 
-  if (!tienda) {
-    return <p className="p-8 text-center text-slate-500">Tienda no encontrada.</p>;
-  }
+  const [cargando, setCargando] = useState(true);
+  const [tienda, setTienda] = useState(null);
+  const [usuario, setUsuario] = useState(null);
+  const [perfil, setPerfil] = useState(null);
+  const [form, setForm] = useState(CAMPOS_INICIALES);
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function cargar() {
+      const [{ data: tiendaData }, { data: userData }] = await Promise.all([
+        supabase.from("tiendas").select("id, nombre, whatsapp").eq("slug", slug).maybeSingle(),
+        supabase.auth.getUser(),
+      ]);
+
+      setTienda(tiendaData);
+      setUsuario(userData.user ?? null);
+
+      if (userData.user) {
+        const { data: perfilData } = await supabase
+          .from("perfiles")
+          .select("nombre, telefono")
+          .eq("id", userData.user.id)
+          .maybeSingle();
+        setPerfil(perfilData);
+      }
+
+      setCargando(false);
+    }
+
+    cargar();
+  }, [slug]);
 
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setError("");
+    setEnviando(true);
+
+    const supabase = createClient();
+
+    const { data: pedido, error: pedidoError } = await supabase
+      .from("pedidos")
+      .insert({
+        tienda_id: tienda.id,
+        comprador_id: usuario.id,
+        destinatario_nombre: form.destinatarioNombre,
+        destinatario_telefono: form.destinatarioTelefono,
+        destinatario_direccion: form.destinatarioDireccion,
+        destinatario_provincia: form.destinatarioProvincia,
+        notas: form.notas,
+        total,
+      })
+      .select()
+      .single();
+
+    if (pedidoError) {
+      setError("No se pudo enviar el pedido. Intenta de nuevo.");
+      setEnviando(false);
+      return;
+    }
+
+    const itemsPayload = items.map((item) => ({
+      pedido_id: pedido.id,
+      producto_id: item.tipo === "producto" ? item.id : null,
+      combo_id: item.tipo === "combo" ? item.id : null,
+      cantidad: item.cantidad,
+      precio_unitario: item.precio,
+    }));
+
+    const { error: itemsError } = await supabase.from("pedido_items").insert(itemsPayload);
+
+    if (itemsError) {
+      setError("El pedido se creó pero hubo un problema guardando los productos.");
+      setEnviando(false);
+      return;
+    }
+
     setEnviado(true);
     vaciarCarrito();
+    setEnviando(false);
+  }
+
+  if (cargando) return null;
+
+  if (!tienda) {
+    return <p className="p-8 text-center text-slate-500">Tienda no encontrada.</p>;
+  }
+
+  if (!usuario) {
+    const returnTo = `/${slug}/pedido`;
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24 text-center">
+        <h1 className="text-xl font-semibold text-slate-900">Inicia sesión para continuar</h1>
+        <p className="mt-2 text-slate-500">
+          Necesitas una cuenta para enviar tu pedido a {tienda.nombre}. Tu carrito no se pierde.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link
+            href={`/login?returnTo=${encodeURIComponent(returnTo)}`}
+            className="rounded-lg bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700"
+          >
+            Iniciar sesión
+          </Link>
+          <Link
+            href={`/registro?returnTo=${encodeURIComponent(returnTo)}`}
+            className="rounded-lg border border-slate-200 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Crear cuenta
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (enviado) {
@@ -70,9 +173,12 @@ export default function PedidoPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="mb-6 text-xl font-bold text-slate-900">
+      <h1 className="mb-1 text-xl font-bold text-slate-900">
         Confirmar pedido — {tienda.nombre}
       </h1>
+      <p className="mb-6 text-sm text-slate-500">
+        A nombre de {perfil?.nombre || usuario.email} · {perfil?.telefono}
+      </p>
 
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
         {items.map((item) => (
@@ -111,26 +217,6 @@ export default function PedidoPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <fieldset className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-          <legend className="px-1 font-semibold text-slate-900">Tus datos</legend>
-          <input
-            required
-            name="compradorNombre"
-            value={form.compradorNombre}
-            onChange={handleChange}
-            placeholder="Tu nombre"
-            className="w-full rounded border border-slate-200 px-3 py-2"
-          />
-          <input
-            required
-            name="compradorTelefono"
-            value={form.compradorTelefono}
-            onChange={handleChange}
-            placeholder="Tu WhatsApp"
-            className="w-full rounded border border-slate-200 px-3 py-2"
-          />
-        </fieldset>
-
         <fieldset className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
           <legend className="px-1 font-semibold text-slate-900">Destinatario en Cuba</legend>
           <input
@@ -173,11 +259,14 @@ export default function PedidoPage() {
           />
         </fieldset>
 
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
         <button
           type="submit"
-          className="w-full rounded-lg bg-sky-600 py-3 font-medium text-white hover:bg-sky-700"
+          disabled={enviando}
+          className="w-full rounded-lg bg-sky-600 py-3 font-medium text-white hover:bg-sky-700 disabled:opacity-60"
         >
-          Enviar pedido
+          {enviando ? "Enviando..." : "Enviar pedido"}
         </button>
       </form>
     </div>

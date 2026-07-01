@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { getTiendaBySlug } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
+import { getTiendaPublica } from "@/lib/supabase/queries";
 import ComboCard from "@/components/tienda/ComboCard";
 import ProductoCard from "@/components/tienda/ProductoCard";
 import CartBadge from "@/components/tienda/CartBadge";
 
 export default async function TiendaPage({ params }) {
   const { tienda: slug } = await params;
-  const tienda = getTiendaBySlug(slug);
+  const supabase = await createClient();
+  const tienda = await getTiendaPublica(supabase, slug);
 
   if (!tienda) {
     return (
@@ -35,22 +37,28 @@ export default async function TiendaPage({ params }) {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-10 px-4 py-8">
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">Combos</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {tienda.combos.map((combo) => (
-              <ComboCard key={combo.id} combo={combo} productos={tienda.productos} />
-            ))}
-          </div>
-        </section>
+        {tienda.combos.length > 0 && (
+          <section>
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Combos</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {tienda.combos.map((combo) => (
+                <ComboCard key={combo.id} combo={combo} />
+              ))}
+            </div>
+          </section>
+        )}
 
         <section>
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Productos individuales</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {tienda.productos.map((producto) => (
-              <ProductoCard key={producto.id} producto={producto} />
-            ))}
-          </div>
+          {tienda.productos.length === 0 ? (
+            <p className="text-sm text-slate-500">Esta tienda todavía no tiene productos.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {tienda.productos.map((producto) => (
+                <ProductoCard key={producto.id} producto={producto} />
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>

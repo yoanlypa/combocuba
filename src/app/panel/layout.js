@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { tiendas } from "@/lib/mock-data";
 
 const NAV = [
   { href: "/panel", label: "Resumen" },
@@ -9,8 +8,6 @@ const NAV = [
 ];
 
 export default function PanelLayout({ children }) {
-  const tienda = tiendas[0];
-
   return (
     <div className="min-h-screen bg-slate-50 lg:flex">
       <aside className="border-b border-slate-200 bg-white lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
@@ -18,7 +15,6 @@ export default function PanelLayout({ children }) {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
             Panel de tienda
           </p>
-          <h2 className="font-semibold text-slate-900">{tienda.nombre}</h2>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-col lg:overflow-visible lg:px-2">
           {NAV.map((item) => (

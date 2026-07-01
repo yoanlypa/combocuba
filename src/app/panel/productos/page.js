@@ -1,37 +1,61 @@
 "use client";
 
-import { useState } from "react";
-import { tiendas } from "@/lib/mock-data";
+import { useCallback, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useTiendaDueno } from "@/lib/supabase/use-tienda-dueno";
 
-const FORM_VACIO = { nombre: "", precio: "", pesoLb: "", emoji: "📦" };
+const FORM_VACIO = { nombre: "", precio: "", peso_lb: "", emoji: "📦" };
 
 export default function ProductosPage() {
-  const [productos, setProductos] = useState(tiendas[0].productos);
+  const { cargando, tienda } = useTiendaDueno();
+  const [productos, setProductos] = useState([]);
+  const [cargandoProductos, setCargandoProductos] = useState(true);
   const [form, setForm] = useState(FORM_VACIO);
   const [mostrarForm, setMostrarForm] = useState(false);
+
+  const cargarProductos = useCallback(async () => {
+    setCargandoProductos(true);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("productos")
+      .select("*")
+      .eq("tienda_id", tienda.id)
+      .order("nombre");
+    setProductos(data ?? []);
+    setCargandoProductos(false);
+  }, [tienda]);
+
+  useEffect(() => {
+    if (tienda) cargarProductos();
+  }, [tienda, cargarProductos]);
 
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const nuevo = {
-      id: `p${Date.now()}`,
+    const supabase = createClient();
+    await supabase.from("productos").insert({
+      tienda_id: tienda.id,
       nombre: form.nombre,
       precio: Number(form.precio),
-      pesoLb: Number(form.pesoLb),
+      peso_lb: Number(form.peso_lb),
       emoji: form.emoji || "📦",
-    };
-    setProductos((prev) => [...prev, nuevo]);
+    });
     setForm(FORM_VACIO);
     setMostrarForm(false);
+    cargarProductos();
   }
 
-  function eliminar(id) {
+  async function eliminar(id) {
+    const supabase = createClient();
     setProductos((prev) => prev.filter((p) => p.id !== id));
+    await supabase.from("productos").delete().eq("id", id);
   }
+
+  if (cargando || !tienda) return null;
 
   return (
     <div>
@@ -77,8 +101,8 @@ export default function ProductosPage() {
           <input
             type="number"
             step="0.01"
-            name="pesoLb"
-            value={form.pesoLb}
+            name="peso_lb"
+            value={form.peso_lb}
             onChange={handleChange}
             placeholder="Peso (lb)"
             className="rounded border border-slate-200 px-3 py-2"
@@ -115,8 +139,8 @@ export default function ProductosPage() {
                 <td className="px-4 py-3">
                   {producto.emoji} {producto.nombre}
                 </td>
-                <td className="px-4 py-3 text-slate-500">{producto.pesoLb} lb</td>
-                <td className="px-4 py-3">${producto.precio}</td>
+                <td className="px-4 py-3 text-slate-500">{producto.peso_lb} lb</td>
+                <td className="px-4 py-3">${Number(producto.precio).toFixed(2)}</td>
                 <td className="px-4 py-3 text-right">
                   <button
                     type="button"
@@ -130,6 +154,10 @@ export default function ProductosPage() {
             ))}
           </tbody>
         </table>
+        {cargandoProductos && <p className="p-4 text-sm text-slate-500">Cargando...</p>}
+        {!cargandoProductos && productos.length === 0 && (
+          <p className="p-4 text-sm text-slate-500">Todavía no tienes productos.</p>
+        )}
       </div>
     </div>
   );

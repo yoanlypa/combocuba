@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { tiendas as tiendasIniciales } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/client";
+import { useSuperAdmin } from "@/lib/supabase/use-super-admin";
 
 function generarSlug(nombre) {
   return nombre
@@ -13,33 +14,75 @@ function generarSlug(nombre) {
     .replace(/(^-|-$)/g, "");
 }
 
-const FORM_VACIO = { nombre: "", email: "", whatsapp: "" };
+function generarCodigo() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+const FORM_VACIO = { nombre: "", whatsapp: "" };
 
 export default function AdminPage() {
-  const [tiendas, setTiendas] = useState(tiendasIniciales);
+  const listo = useSuperAdmin();
+  const [tiendas, setTiendas] = useState([]);
+  const [cargandoTiendas, setCargandoTiendas] = useState(true);
   const [form, setForm] = useState(FORM_VACIO);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [invitacion, setInvitacion] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (listo) cargarTiendas();
+  }, [listo]);
+
+  async function cargarTiendas() {
+    setCargandoTiendas(true);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("tiendas")
+      .select("id, nombre, slug, creada_en")
+      .order("creada_en", { ascending: false });
+    setTiendas(data ?? []);
+    setCargandoTiendas(false);
+  }
 
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const nueva = {
-      slug: generarSlug(form.nombre),
-      nombre: form.nombre,
-      descripcion: "",
-      whatsapp: form.whatsapp,
-      emailContacto: form.email,
-      productos: [],
-      combos: [],
-    };
-    setTiendas((prev) => [...prev, nueva]);
+    setError("");
+    const supabase = createClient();
+
+    const { data: tienda, error: tiendaError } = await supabase
+      .from("tiendas")
+      .insert({ nombre: form.nombre, slug: generarSlug(form.nombre), whatsapp: form.whatsapp })
+      .select()
+      .single();
+
+    if (tiendaError) {
+      setError("No se pudo crear la tienda (revisa que el nombre no esté repetido).");
+      return;
+    }
+
+    const codigo = generarCodigo();
+    const { error: invitacionError } = await supabase
+      .from("invitaciones")
+      .insert({ tienda_id: tienda.id, codigo });
+
+    if (invitacionError) {
+      setError("La tienda se creó, pero no se pudo generar el código de invitación.");
+      cargarTiendas();
+      return;
+    }
+
+    setInvitacion({ tienda, codigo });
     setForm(FORM_VACIO);
     setMostrarForm(false);
+    cargarTiendas();
   }
+
+  if (!listo) return null;
 
   return (
     <div>
@@ -74,15 +117,6 @@ export default function AdminPage() {
           />
           <input
             required
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="Email del dueño"
-            className="rounded border border-slate-200 px-3 py-2"
-          />
-          <input
-            required
             name="whatsapp"
             value={form.whatsapp}
             onChange={handleChange}
@@ -95,7 +129,19 @@ export default function AdminPage() {
           >
             Crear tienda
           </button>
+          {error && <p className="text-sm text-red-600 sm:col-span-3">{error}</p>}
         </form>
+      )}
+
+      {invitacion && (
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          <p className="font-medium">
+            Tienda &quot;{invitacion.tienda.nombre}&quot; creada. Comparte este enlace con el dueño para que active su cuenta:
+          </p>
+          <p className="mt-2 break-all font-mono text-emerald-900">
+            {window.location.origin}/activar-tienda?codigo={invitacion.codigo}
+          </p>
+        </div>
       )}
 
       <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -104,16 +150,14 @@ export default function AdminPage() {
             <tr>
               <th className="px-4 py-2 font-medium">Nombre</th>
               <th className="px-4 py-2 font-medium">Enlace de tienda</th>
-              <th className="px-4 py-2 font-medium">Productos</th>
               <th className="px-4 py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {tiendas.map((tienda) => (
-              <tr key={tienda.slug} className="border-t border-slate-100">
+              <tr key={tienda.id} className="border-t border-slate-100">
                 <td className="px-4 py-3 font-medium text-slate-900">{tienda.nombre}</td>
                 <td className="px-4 py-3 text-sky-600">/{tienda.slug}</td>
-                <td className="px-4 py-3 text-slate-500">{tienda.productos.length}</td>
                 <td className="px-4 py-3 text-right">
                   <Link href={`/${tienda.slug}`} className="text-sky-600 hover:underline">
                     Ver tienda
@@ -123,6 +167,10 @@ export default function AdminPage() {
             ))}
           </tbody>
         </table>
+        {cargandoTiendas && <p className="p-4 text-sm text-slate-500">Cargando...</p>}
+        {!cargandoTiendas && tiendas.length === 0 && (
+          <p className="p-4 text-sm text-slate-500">Todavía no hay tiendas.</p>
+        )}
       </div>
     </div>
   );

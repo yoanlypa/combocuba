@@ -1,9 +1,6 @@
 import Link from "next/link";
-import { tiendas } from "@/lib/mock-data";
 
 export default function Home() {
-  const tiendaDemo = tiendas[0];
-
   return (
     <div className="flex flex-1 flex-col">
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-6 py-24 text-center">
@@ -21,7 +18,7 @@ export default function Home() {
 
         <div className="mt-10 grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
           <Link
-            href={`/${tiendaDemo.slug}`}
+            href="/la-habana-express"
             className="rounded-xl border border-slate-200 bg-white p-4 text-left hover:border-sky-300"
           >
             <p className="font-semibold text-slate-900">Tienda demo</p>

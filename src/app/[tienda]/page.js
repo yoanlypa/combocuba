@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getTiendaPublica } from "@/lib/supabase/queries";
 import ComboCard from "@/components/tienda/ComboCard";
 import ProductoCard from "@/components/tienda/ProductoCard";
-import CartBadge from "@/components/tienda/CartBadge";
 
 export default async function TiendaPage({ params }) {
   const { tienda: slug } = await params;
@@ -26,17 +25,11 @@ export default async function TiendaPage({ params }) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">{tienda.nombre}</h1>
-            <p className="text-sm text-slate-500">{tienda.descripcion}</p>
-          </div>
-          <CartBadge tiendaSlug={slug} />
-        </div>
-      </header>
-
       <main className="mx-auto max-w-5xl space-y-10 px-4 py-8">
+        {tienda.descripcion && (
+          <p className="text-sm text-slate-500">{tienda.descripcion}</p>
+        )}
+
         {tienda.combos.length > 0 && (
           <section>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Combos</h2>

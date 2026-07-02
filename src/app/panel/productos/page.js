@@ -4,13 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTiendaDueno } from "@/lib/supabase/use-tienda-dueno";
 
-const FORM_VACIO = { nombre: "", precio: "", peso_lb: "", emoji: "📦" };
+const FORM_VACIO = { nombre: "", precio: "", peso_lb: "" };
 
 export default function ProductosPage() {
   const { cargando, tienda } = useTiendaDueno();
   const [productos, setProductos] = useState([]);
   const [cargandoProductos, setCargandoProductos] = useState(true);
   const [form, setForm] = useState(FORM_VACIO);
+  const [imagen, setImagen] = useState(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState("");
   const [mostrarForm, setMostrarForm] = useState(false);
 
   const cargarProductos = useCallback(async () => {
@@ -36,16 +39,39 @@ export default function ProductosPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setError("");
+    setSubiendo(true);
+
     const supabase = createClient();
+    let imagen_url = null;
+
+    if (imagen) {
+      const ruta = `${tienda.id}/${crypto.randomUUID()}-${imagen.name}`;
+      const { error: subidaError } = await supabase.storage
+        .from("productos")
+        .upload(ruta, imagen);
+
+      if (subidaError) {
+        setError("No se pudo subir la imagen. Intenta de nuevo.");
+        setSubiendo(false);
+        return;
+      }
+
+      imagen_url = supabase.storage.from("productos").getPublicUrl(ruta).data.publicUrl;
+    }
+
     await supabase.from("productos").insert({
       tienda_id: tienda.id,
       nombre: form.nombre,
       precio: Number(form.precio),
       peso_lb: Number(form.peso_lb),
-      emoji: form.emoji || "📦",
+      imagen_url,
     });
+
     setForm(FORM_VACIO);
+    setImagen(null);
     setMostrarForm(false);
+    setSubiendo(false);
     cargarProductos();
   }
 
@@ -107,18 +133,31 @@ export default function ProductosPage() {
             placeholder="Peso (lb)"
             className="rounded border border-slate-200 px-3 py-2"
           />
-          <input
-            name="emoji"
-            value={form.emoji}
-            onChange={handleChange}
-            placeholder="Emoji (ej. 🍚)"
-            className="rounded border border-slate-200 px-3 py-2"
-          />
+
+          <div className="flex items-center gap-3 sm:col-span-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImagen(e.target.files?.[0] ?? null)}
+              className="text-sm text-slate-600"
+            />
+            {imagen && (
+              <img
+                src={URL.createObjectURL(imagen)}
+                alt="Vista previa"
+                className="h-12 w-12 rounded-lg object-cover"
+              />
+            )}
+          </div>
+
+          {error && <p className="text-sm text-red-600 sm:col-span-4">{error}</p>}
+
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 sm:col-span-4"
+            disabled={subiendo}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 sm:col-span-4"
           >
-            Guardar producto
+            {subiendo ? "Guardando..." : "Guardar producto"}
           </button>
         </form>
       )}
@@ -136,8 +175,17 @@ export default function ProductosPage() {
           <tbody>
             {productos.map((producto) => (
               <tr key={producto.id} className="border-t border-slate-100">
-                <td className="px-4 py-3">
-                  {producto.emoji} {producto.nombre}
+                <td className="flex items-center gap-2 px-4 py-3">
+                  {producto.imagen_url ? (
+                    <img
+                      src={producto.imagen_url}
+                      alt={producto.nombre}
+                      className="h-8 w-8 rounded object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg">📦</span>
+                  )}
+                  {producto.nombre}
                 </td>
                 <td className="px-4 py-3 text-slate-500">{producto.peso_lb} lb</td>
                 <td className="px-4 py-3">${Number(producto.precio).toFixed(2)}</td>

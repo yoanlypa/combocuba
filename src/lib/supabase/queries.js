@@ -11,13 +11,15 @@ export async function getTiendaPublica(supabase, slug) {
   const [{ data: productos }, { data: combos }] = await Promise.all([
     supabase
       .from("productos")
-      .select("id, nombre, precio, peso_lb, emoji")
+      .select("id, nombre, precio, peso_lb, emoji, imagen_url")
       .eq("tienda_id", tienda.id)
       .eq("disponible", true)
       .order("nombre"),
     supabase
       .from("combos")
-      .select("id, nombre, descripcion, precio, combo_productos(cantidad, productos(id, nombre, emoji))")
+      .select(
+        "id, nombre, descripcion, precio, combo_productos(cantidad, productos(id, nombre, emoji, imagen_url))"
+      )
       .eq("tienda_id", tienda.id)
       .eq("disponible", true)
       .order("nombre"),

@@ -1,9 +1,11 @@
 -- 004: corrige "infinite recursion detected in policy for relation perfiles"
--- Ejecutar una sola vez en el SQL Editor de Supabase (después de migration_3).
+-- Ejecutar una sola vez en el SQL Editor de Supabase.
+-- Si algo falla, copia el mensaje de error completo tal cual lo muestra Supabase.
 
 drop policy if exists "perfiles_select_dueno_de_compradores" on perfiles;
+drop function if exists mi_tienda_id();
 
-create or replace function mi_tienda_id()
+create function mi_tienda_id()
 returns uuid
 language sql
 security definer

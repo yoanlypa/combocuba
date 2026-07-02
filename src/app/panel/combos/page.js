@@ -18,10 +18,16 @@ export default function CombosPage() {
     setCargandoDatos(true);
     const supabase = createClient();
     const [{ data: productosData }, { data: combosData }] = await Promise.all([
-      supabase.from("productos").select("id, nombre, emoji").eq("tienda_id", tienda.id).order("nombre"),
+      supabase
+        .from("productos")
+        .select("id, nombre, emoji, imagen_url")
+        .eq("tienda_id", tienda.id)
+        .order("nombre"),
       supabase
         .from("combos")
-        .select("id, nombre, descripcion, precio, combo_productos(cantidad, productos(id, nombre, emoji))")
+        .select(
+          "id, nombre, descripcion, precio, combo_productos(cantidad, productos(id, nombre, emoji, imagen_url))"
+        )
         .eq("tienda_id", tienda.id)
         .order("nombre"),
     ]);
@@ -160,7 +166,16 @@ export default function CombosPage() {
                       checked={form.productosIds.includes(producto.id)}
                       onChange={() => toggleProducto(producto.id)}
                     />
-                    {producto.emoji} {producto.nombre}
+                    {producto.imagen_url ? (
+                      <img
+                        src={producto.imagen_url}
+                        alt=""
+                        className="mr-1 inline h-4 w-4 rounded object-cover align-[-2px]"
+                      />
+                    ) : (
+                      <span>{producto.emoji} </span>
+                    )}
+                    {producto.nombre}
                   </label>
                 ))}
               </div>
@@ -183,8 +198,17 @@ export default function CombosPage() {
             <p className="mt-1 text-sm text-slate-500">{combo.descripcion}</p>
             <ul className="mt-2 text-sm text-slate-600">
               {combo.combo_productos.map((cp) => (
-                <li key={cp.productos.id}>
-                  {cp.productos.emoji} {cp.productos.nombre}
+                <li key={cp.productos.id} className="flex items-center gap-1.5">
+                  {cp.productos.imagen_url ? (
+                    <img
+                      src={cp.productos.imagen_url}
+                      alt=""
+                      className="h-4 w-4 rounded object-cover"
+                    />
+                  ) : (
+                    <span>{cp.productos.emoji}</span>
+                  )}
+                  {cp.productos.nombre}
                 </li>
               ))}
             </ul>

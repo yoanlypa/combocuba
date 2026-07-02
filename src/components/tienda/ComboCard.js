@@ -10,8 +10,13 @@ export default function ComboCard({ combo }) {
       <p className="mt-1 text-sm text-slate-500">{combo.descripcion}</p>
       <ul className="mt-3 space-y-1 text-sm text-slate-600">
         {items.map((p) => (
-          <li key={p.id}>
-            {p.emoji} {p.nombre}
+          <li key={p.id} className="flex items-center gap-1.5">
+            {p.imagen_url ? (
+              <img src={p.imagen_url} alt={p.nombre} className="h-4 w-4 rounded object-cover" />
+            ) : (
+              <span>{p.emoji}</span>
+            )}
+            {p.nombre}
           </li>
         ))}
       </ul>

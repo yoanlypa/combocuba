@@ -56,28 +56,32 @@ export default function ResumenPage() {
         ) : pedidos.length === 0 ? (
           <p className="p-4 text-sm text-slate-500">Todavía no tienes pedidos.</p>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500">
-              <tr>
-                <th className="px-4 py-2 font-medium">Destinatario</th>
-                <th className="px-4 py-2 font-medium">Total</th>
-                <th className="px-4 py-2 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pedidos.map((pedido) => (
-                <tr key={pedido.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 text-slate-500">
-                    {pedido.destinatario_nombre} · {pedido.destinatario_provincia}
-                  </td>
-                  <td className="px-4 py-3">${Number(pedido.total).toFixed(2)}</td>
-                  <td className="px-4 py-3">
-                    <EstadoBadge estado={pedido.estado} />
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-2 font-medium">Destinatario</th>
+                  <th className="whitespace-nowrap px-4 py-2 font-medium">Total</th>
+                  <th className="whitespace-nowrap px-4 py-2 font-medium">Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pedidos.map((pedido) => (
+                  <tr key={pedido.id} className="border-t border-slate-100">
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                      {pedido.destinatario_nombre} · {pedido.destinatario_provincia}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      ${Number(pedido.total).toFixed(2)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <EstadoBadge estado={pedido.estado} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

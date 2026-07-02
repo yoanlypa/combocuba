@@ -96,7 +96,7 @@ export default function CombosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Combos</h1>
           <p className="mt-1 text-sm text-slate-500">

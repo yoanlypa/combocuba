@@ -125,7 +125,7 @@ export default function ProductosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Productos</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -225,33 +225,40 @@ export default function ProductosPage() {
       )}
 
       <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-slate-500">
             <tr>
-              <th className="px-4 py-2 font-medium">Producto</th>
-              <th className="px-4 py-2 font-medium">Peso</th>
-              <th className="px-4 py-2 font-medium">Precio</th>
+              <th className="whitespace-nowrap px-4 py-2 font-medium">Producto</th>
+              <th className="whitespace-nowrap px-4 py-2 font-medium">Peso</th>
+              <th className="whitespace-nowrap px-4 py-2 font-medium">Precio</th>
               <th className="px-4 py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {productos.map((producto) => (
               <tr key={producto.id} className="border-t border-slate-100">
-                <td className="flex items-center gap-2 px-4 py-3">
-                  {producto.imagen_url ? (
-                    <img
-                      src={producto.imagen_url}
-                      alt={producto.nombre}
-                      className="h-8 w-8 rounded object-cover"
-                    />
-                  ) : (
-                    <span className="text-lg">📦</span>
-                  )}
-                  {producto.nombre}
+                <td className="whitespace-nowrap px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    {producto.imagen_url ? (
+                      <img
+                        src={producto.imagen_url}
+                        alt={producto.nombre}
+                        className="h-8 w-8 shrink-0 rounded object-cover"
+                      />
+                    ) : (
+                      <span className="text-lg">📦</span>
+                    )}
+                    {producto.nombre}
+                  </div>
                 </td>
-                <td className="px-4 py-3 text-slate-500">{producto.peso_lb} lb</td>
-                <td className="px-4 py-3">${Number(producto.precio).toFixed(2)}</td>
-                <td className="px-4 py-3 text-right">
+                <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                  {producto.peso_lb} lb
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  ${Number(producto.precio).toFixed(2)}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right">
                   <button
                     type="button"
                     onClick={() => editar(producto)}
@@ -272,6 +279,7 @@ export default function ProductosPage() {
             ))}
           </tbody>
         </table>
+        </div>
         {cargandoProductos && <p className="p-4 text-sm text-slate-500">Cargando...</p>}
         {!cargandoProductos && productos.length === 0 && (
           <p className="p-4 text-sm text-slate-500">Todavía no tienes productos.</p>

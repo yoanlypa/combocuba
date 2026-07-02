@@ -69,9 +69,13 @@ export default function AuthStatus() {
   }
 
   return (
-    <div className="flex items-center gap-3 text-sm">
-      <span className="text-slate-600">{nombre}</span>
-      <button type="button" onClick={cerrarSesion} className="text-slate-400 hover:text-red-600">
+    <div className="flex min-w-0 items-center gap-3 text-sm">
+      <span className="max-w-[40vw] truncate text-slate-600 sm:max-w-none">{nombre}</span>
+      <button
+        type="button"
+        onClick={cerrarSesion}
+        className="shrink-0 text-slate-400 hover:text-red-600"
+      >
         Cerrar sesión
       </button>
     </div>

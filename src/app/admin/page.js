@@ -86,7 +86,7 @@ export default function AdminPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Tiendas</h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -145,35 +145,40 @@ export default function AdminPage() {
       )}
 
       <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">Nombre</th>
-              <th className="px-4 py-2 font-medium">Enlace de tienda</th>
-              <th className="px-4 py-2 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {tiendas.map((tienda) => (
-              <tr key={tienda.id} className="border-t border-slate-100">
-                <td className="px-4 py-3 font-medium text-slate-900">{tienda.nombre}</td>
-                <td className="px-4 py-3 text-sky-600">/{tienda.slug}</td>
-                <td className="px-4 py-3 text-right">
-                  <Link href={`/${tienda.slug}`} className="text-sky-600 hover:underline">
-                    Ver tienda
-                  </Link>
-                  <span className="mx-2 text-slate-300">·</span>
-                  <Link
-                    href={`/panel?tienda=${tienda.slug}`}
-                    className="text-sky-600 hover:underline"
-                  >
-                    Gestionar panel
-                  </Link>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-500">
+              <tr>
+                <th className="whitespace-nowrap px-4 py-2 font-medium">Nombre</th>
+                <th className="whitespace-nowrap px-4 py-2 font-medium">Enlace de tienda</th>
+                <th className="px-4 py-2 font-medium"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tiendas.map((tienda) => (
+                <tr key={tienda.id} className="border-t border-slate-100">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
+                    {tienda.nombre}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sky-600">/{tienda.slug}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex flex-wrap justify-end gap-x-2 gap-y-1">
+                      <Link href={`/${tienda.slug}`} className="text-sky-600 hover:underline">
+                        Ver tienda
+                      </Link>
+                      <Link
+                        href={`/panel?tienda=${tienda.slug}`}
+                        className="text-sky-600 hover:underline"
+                      >
+                        Gestionar panel
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {cargandoTiendas && <p className="p-4 text-sm text-slate-500">Cargando...</p>}
         {!cargandoTiendas && tiendas.length === 0 && (
           <p className="p-4 text-sm text-slate-500">Todavía no hay tiendas.</p>

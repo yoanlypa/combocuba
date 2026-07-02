@@ -13,8 +13,10 @@ export function useSuperAdmin() {
     let activo = true;
 
     async function verificar() {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const usuario = sessionData.session?.user;
+
+      if (!usuario) {
         router.replace("/login?returnTo=/admin");
         return;
       }
@@ -22,7 +24,7 @@ export function useSuperAdmin() {
       const { data: perfil } = await supabase
         .from("perfiles")
         .select("rol")
-        .eq("id", userData.user.id)
+        .eq("id", usuario.id)
         .maybeSingle();
 
       if (perfil?.rol !== "super_admin") {

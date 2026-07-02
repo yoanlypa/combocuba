@@ -162,6 +162,13 @@ export default function AdminPage() {
                   <Link href={`/${tienda.slug}`} className="text-sky-600 hover:underline">
                     Ver tienda
                   </Link>
+                  <span className="mx-2 text-slate-300">·</span>
+                  <Link
+                    href={`/panel?tienda=${tienda.slug}`}
+                    className="text-sky-600 hover:underline"
+                  >
+                    Gestionar panel
+                  </Link>
                 </td>
               </tr>
             ))}

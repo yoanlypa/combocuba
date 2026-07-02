@@ -14,8 +14,10 @@ export function useTiendaDueno() {
     let activo = true;
 
     async function cargar() {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const usuario = sessionData.session?.user;
+
+      if (!usuario) {
         router.replace("/login?returnTo=/panel");
         return;
       }
@@ -23,19 +25,31 @@ export function useTiendaDueno() {
       const { data: perfil } = await supabase
         .from("perfiles")
         .select("rol, tienda_id")
-        .eq("id", userData.user.id)
+        .eq("id", usuario.id)
         .maybeSingle();
 
-      if (!perfil || perfil.rol !== "dueno_tienda" || !perfil.tienda_id) {
+      if (!perfil) {
         router.replace("/");
         return;
       }
 
-      const { data: tiendaData } = await supabase
-        .from("tiendas")
-        .select("id, nombre, slug, whatsapp")
-        .eq("id", perfil.tienda_id)
-        .maybeSingle();
+      let consulta = supabase.from("tiendas").select("id, nombre, slug, whatsapp");
+
+      if (perfil.rol === "super_admin") {
+        const tiendaSlug = new URLSearchParams(window.location.search).get("tienda");
+        if (!tiendaSlug) {
+          router.replace("/admin");
+          return;
+        }
+        consulta = consulta.eq("slug", tiendaSlug);
+      } else if (perfil.rol === "dueno_tienda" && perfil.tienda_id) {
+        consulta = consulta.eq("id", perfil.tienda_id);
+      } else {
+        router.replace("/");
+        return;
+      }
+
+      const { data: tiendaData } = await consulta.maybeSingle();
 
       if (activo) {
         setTienda(tiendaData);

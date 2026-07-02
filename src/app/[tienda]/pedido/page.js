@@ -32,19 +32,20 @@ export default function PedidoPage() {
     const supabase = createClient();
 
     async function cargar() {
-      const [{ data: tiendaData }, { data: userData }] = await Promise.all([
+      const [{ data: tiendaData }, { data: sessionData }] = await Promise.all([
         supabase.from("tiendas").select("id, nombre, whatsapp").eq("slug", slug).maybeSingle(),
-        supabase.auth.getUser(),
+        supabase.auth.getSession(),
       ]);
 
+      const usuarioActual = sessionData.session?.user ?? null;
       setTienda(tiendaData);
-      setUsuario(userData.user ?? null);
+      setUsuario(usuarioActual);
 
-      if (userData.user) {
+      if (usuarioActual) {
         const { data: perfilData } = await supabase
           .from("perfiles")
           .select("nombre, telefono")
-          .eq("id", userData.user.id)
+          .eq("id", usuarioActual.id)
           .maybeSingle();
         setPerfil(perfilData);
       }

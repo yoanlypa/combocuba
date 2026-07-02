@@ -1,11 +1,4 @@
-import Link from "next/link";
-
-const NAV = [
-  { href: "/panel", label: "Resumen" },
-  { href: "/panel/pedidos", label: "Pedidos" },
-  { href: "/panel/productos", label: "Productos" },
-  { href: "/panel/combos", label: "Combos" },
-];
+import PanelNav from "@/components/panel/PanelNav";
 
 export default function PanelLayout({ children }) {
   return (
@@ -16,17 +9,7 @@ export default function PanelLayout({ children }) {
             Panel de tienda
           </p>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-col lg:overflow-visible lg:px-2">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <PanelNav />
       </aside>
       <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
     </div>

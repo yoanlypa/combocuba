@@ -12,6 +12,8 @@ export default function ProductosPage() {
   const [cargandoProductos, setCargandoProductos] = useState(true);
   const [form, setForm] = useState(FORM_VACIO);
   const [imagen, setImagen] = useState(null);
+  const [imagenActualUrl, setImagenActualUrl] = useState(null);
+  const [editandoId, setEditandoId] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState("");
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -37,13 +39,48 @@ export default function ProductosPage() {
     setForm((f) => ({ ...f, [name]: value }));
   }
 
+  function cerrarFormulario() {
+    setMostrarForm(false);
+    setEditandoId(null);
+    setForm(FORM_VACIO);
+    setImagen(null);
+    setImagenActualUrl(null);
+    setError("");
+  }
+
+  function abrirNuevo() {
+    if (mostrarForm && !editandoId) {
+      cerrarFormulario();
+      return;
+    }
+    setEditandoId(null);
+    setForm(FORM_VACIO);
+    setImagen(null);
+    setImagenActualUrl(null);
+    setError("");
+    setMostrarForm(true);
+  }
+
+  function editar(producto) {
+    setEditandoId(producto.id);
+    setForm({
+      nombre: producto.nombre,
+      precio: String(producto.precio),
+      peso_lb: String(producto.peso_lb ?? ""),
+    });
+    setImagen(null);
+    setImagenActualUrl(producto.imagen_url);
+    setError("");
+    setMostrarForm(true);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setSubiendo(true);
 
     const supabase = createClient();
-    let imagen_url = null;
+    let imagen_url = imagenActualUrl;
 
     if (imagen) {
       const ruta = `${tienda.id}/${crypto.randomUUID()}-${imagen.name}`;
@@ -60,17 +97,20 @@ export default function ProductosPage() {
       imagen_url = supabase.storage.from("productos").getPublicUrl(ruta).data.publicUrl;
     }
 
-    await supabase.from("productos").insert({
-      tienda_id: tienda.id,
+    const datos = {
       nombre: form.nombre,
       precio: Number(form.precio),
       peso_lb: Number(form.peso_lb),
       imagen_url,
-    });
+    };
 
-    setForm(FORM_VACIO);
-    setImagen(null);
-    setMostrarForm(false);
+    if (editandoId) {
+      await supabase.from("productos").update(datos).eq("id", editandoId);
+    } else {
+      await supabase.from("productos").insert({ tienda_id: tienda.id, ...datos });
+    }
+
+    cerrarFormulario();
     setSubiendo(false);
     cargarProductos();
   }
@@ -94,10 +134,10 @@ export default function ProductosPage() {
         </div>
         <button
           type="button"
-          onClick={() => setMostrarForm((v) => !v)}
+          onClick={abrirNuevo}
           className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
         >
-          {mostrarForm ? "Cancelar" : "Nuevo producto"}
+          {mostrarForm && !editandoId ? "Cancelar" : "Nuevo producto"}
         </button>
       </div>
 
@@ -106,6 +146,9 @@ export default function ProductosPage() {
           onSubmit={handleSubmit}
           className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-4"
         >
+          <p className="text-sm font-medium text-slate-700 sm:col-span-4">
+            {editandoId ? "Editar producto" : "Nuevo producto"}
+          </p>
           <input
             required
             name="nombre"
@@ -141,24 +184,43 @@ export default function ProductosPage() {
               onChange={(e) => setImagen(e.target.files?.[0] ?? null)}
               className="text-sm text-slate-600"
             />
-            {imagen && (
+            {imagen ? (
               <img
                 src={URL.createObjectURL(imagen)}
                 alt="Vista previa"
                 className="h-12 w-12 rounded-lg object-cover"
               />
+            ) : (
+              imagenActualUrl && (
+                <img
+                  src={imagenActualUrl}
+                  alt="Imagen actual"
+                  className="h-12 w-12 rounded-lg object-cover"
+                />
+              )
             )}
           </div>
 
           {error && <p className="text-sm text-red-600 sm:col-span-4">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={subiendo}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 sm:col-span-4"
-          >
-            {subiendo ? "Guardando..." : "Guardar producto"}
-          </button>
+          <div className="flex gap-2 sm:col-span-4">
+            <button
+              type="submit"
+              disabled={subiendo}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+            >
+              {subiendo ? "Guardando..." : "Guardar producto"}
+            </button>
+            {editandoId && (
+              <button
+                type="button"
+                onClick={cerrarFormulario}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
       )}
 
@@ -190,6 +252,14 @@ export default function ProductosPage() {
                 <td className="px-4 py-3 text-slate-500">{producto.peso_lb} lb</td>
                 <td className="px-4 py-3">${Number(producto.precio).toFixed(2)}</td>
                 <td className="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => editar(producto)}
+                    className="text-sky-600 hover:underline"
+                  >
+                    Editar
+                  </button>
+                  <span className="mx-2 text-slate-300">·</span>
                   <button
                     type="button"
                     onClick={() => eliminar(producto.id)}

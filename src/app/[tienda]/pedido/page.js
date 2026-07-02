@@ -105,6 +105,12 @@ export default function PedidoPage() {
       return;
     }
 
+    fetch("/api/notificar-pedido", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pedidoId: pedido.id }),
+    }).catch(() => {});
+
     setEnviado(true);
     vaciarCarrito();
     setEnviando(false);

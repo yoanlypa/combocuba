@@ -8,6 +8,7 @@ const NAV = [
   { href: "/panel/pedidos", label: "Pedidos" },
   { href: "/panel/productos", label: "Productos" },
   { href: "/panel/combos", label: "Combos" },
+  { href: "/panel/ajustes", label: "Ajustes" },
 ];
 
 export default function PanelNav() {

@@ -18,7 +18,7 @@ function generarCodigo() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-const FORM_VACIO = { nombre: "", whatsapp: "" };
+const FORM_VACIO = { nombre: "", whatsapp: "", email_contacto: "" };
 
 export default function AdminPage() {
   const listo = useSuperAdmin();
@@ -56,7 +56,12 @@ export default function AdminPage() {
 
     const { data: tienda, error: tiendaError } = await supabase
       .from("tiendas")
-      .insert({ nombre: form.nombre, slug: generarSlug(form.nombre), whatsapp: form.whatsapp })
+      .insert({
+        nombre: form.nombre,
+        slug: generarSlug(form.nombre),
+        whatsapp: form.whatsapp,
+        email_contacto: form.email_contacto || null,
+      })
       .select()
       .single();
 
@@ -121,6 +126,14 @@ export default function AdminPage() {
             value={form.whatsapp}
             onChange={handleChange}
             placeholder="WhatsApp (con código de país)"
+            className="rounded border border-slate-200 px-3 py-2"
+          />
+          <input
+            type="email"
+            name="email_contacto"
+            value={form.email_contacto}
+            onChange={handleChange}
+            placeholder="Correo para avisos (opcional)"
             className="rounded border border-slate-200 px-3 py-2"
           />
           <button

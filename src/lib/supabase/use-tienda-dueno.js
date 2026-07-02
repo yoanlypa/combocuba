@@ -33,7 +33,9 @@ export function useTiendaDueno() {
         return;
       }
 
-      let consulta = supabase.from("tiendas").select("id, nombre, slug, whatsapp");
+      let consulta = supabase
+        .from("tiendas")
+        .select("id, nombre, slug, whatsapp, email_contacto, telegram_chat_id");
 
       if (perfil.rol === "super_admin") {
         const tiendaSlug = new URLSearchParams(window.location.search).get("tienda");

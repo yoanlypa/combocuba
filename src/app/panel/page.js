@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useTiendaDueno } from "@/lib/supabase/use-tienda-dueno";
 import EstadoBadge from "@/components/panel/EstadoBadge";
@@ -33,6 +34,19 @@ export default function ResumenPage() {
     <div>
       <h1 className="text-xl font-bold text-slate-900">Resumen</h1>
       <p className="mt-1 text-sm text-slate-500">{tienda.nombre}</p>
+
+      {!tienda.email_contacto && !tienda.telegram_chat_id && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Todavía no configuras dónde recibir avisos de pedidos nuevos.{" "}
+          <Link
+            href={`/panel/ajustes${window.location.search}`}
+            className="font-medium underline"
+          >
+            Configúralo en Ajustes
+          </Link>
+          .
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-4">

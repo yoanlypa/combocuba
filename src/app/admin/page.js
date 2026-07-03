@@ -66,7 +66,16 @@ export default function AdminPage() {
       .single();
 
     if (tiendaError) {
-      setError("No se pudo crear la tienda (revisa que el nombre no esté repetido).");
+      if (tiendaError.code === "23505") {
+        const campo = tiendaError.message.includes("whatsapp")
+          ? "ese WhatsApp"
+          : tiendaError.message.includes("email_contacto")
+            ? "ese correo"
+            : "ese nombre";
+        setError(`Ya existe una tienda con ${campo}.`);
+      } else {
+        setError("No se pudo crear la tienda. Intenta de nuevo.");
+      }
       return;
     }
 

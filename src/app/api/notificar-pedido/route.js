@@ -41,38 +41,54 @@ export async function POST(request) {
     `Notas: ${pedido.notas || "—"}`,
   ].join("\n");
 
-  const resultados = await Promise.allSettled([
+  const [email, telegram] = await Promise.all([
     enviarEmail(pedido.tiendas.email_contacto, pedido.tiendas.nombre, mensaje),
     enviarTelegram(pedido.tiendas.telegram_chat_id, mensaje),
   ]);
 
-  return NextResponse.json({ ok: true, resultados: resultados.map((r) => r.status) });
+  return NextResponse.json({ ok: true, email, telegram });
 }
 
 async function enviarEmail(destinatario, tiendaNombre, mensaje) {
-  if (!destinatario || !process.env.RESEND_API_KEY) return;
+  if (!destinatario) return { enviado: false, motivo: "la tienda no tiene email_contacto" };
+  if (!process.env.RESEND_API_KEY) return { enviado: false, motivo: "falta RESEND_API_KEY" };
 
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "ComboCuba <onboarding@resend.dev>",
-      to: destinatario,
-      subject: `Nuevo pedido en ${tiendaNombre}`,
-      text: mensaje,
-    }),
-  });
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "ComboCuba <onboarding@resend.dev>",
+        to: destinatario,
+        subject: `Nuevo pedido en ${tiendaNombre}`,
+        text: mensaje,
+      }),
+    });
+
+    const cuerpo = await res.json().catch(() => null);
+    return { enviado: res.ok, status: res.status, cuerpo };
+  } catch (e) {
+    return { enviado: false, motivo: String(e) };
+  }
 }
 
 async function enviarTelegram(chatId, mensaje) {
-  if (!chatId || !process.env.TELEGRAM_BOT_TOKEN) return;
+  if (!chatId) return { enviado: false, motivo: "la tienda no tiene telegram_chat_id" };
+  if (!process.env.TELEGRAM_BOT_TOKEN) return { enviado: false, motivo: "falta TELEGRAM_BOT_TOKEN" };
 
-  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text: mensaje }),
-  });
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: mensaje }),
+    });
+
+    const cuerpo = await res.json().catch(() => null);
+    return { enviado: res.ok, status: res.status, cuerpo };
+  } catch (e) {
+    return { enviado: false, motivo: String(e) };
+  }
 }

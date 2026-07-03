@@ -36,7 +36,12 @@ export default function AjustesPage() {
     const supabase = createClient();
     const { error } = await supabase.from("tiendas").update(form).eq("id", tienda.id);
 
-    setMensaje(error ? "No se pudo guardar. Intenta de nuevo." : "Guardado.");
+    if (error?.code === "23505") {
+      const campo = error.message.includes("whatsapp") ? "WhatsApp" : "correo";
+      setMensaje(`Ese ${campo} ya lo está usando otra tienda.`);
+    } else {
+      setMensaje(error ? "No se pudo guardar. Intenta de nuevo." : "Guardado.");
+    }
     setGuardando(false);
   }
 

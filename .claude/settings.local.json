@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm -v)",
       "Bash(git --version)",
-      "Bash(npx --yes create-next-app@latest . --js --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)"
+      "Bash(npx --yes create-next-app@latest . --js --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "mcp__bf7c680d-5fdc-5ef4-b4a0-abadb619bf0a__list_repos"
     ]
   }
 }
